@@ -2,7 +2,7 @@ import * as db from './db.js';
 import { abrirEditor } from './editor.js';
 import { construirPaquete } from './paquete.js';
 
-export const VERSION_APP = '2.2';
+export const VERSION_APP = '2.3';
 const app = document.getElementById('app');
 function aviso(texto) {
   document.getElementById('aviso')?.remove();
@@ -209,7 +209,10 @@ async function enviar(v) {
     if (!its.length) { cerrarEspera(); aviso('La visita está vacía: haz alguna foto, audio o nota antes de enviarla.'); return; }
     const { nombre, bytes, manifiesto } = await construirPaquete(v, its);
     cerrarEspera();
-    const archivo = new File([bytes], nombre, { type: 'application/zip' });
+    // Chrome solo deja compartir ciertos tipos de archivo: probamos varios y usamos el primero admitido.
+    const candidatos = ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'].map((t) => new File([bytes], nombre, { type: t }));
+    const archivo = candidatos.find((f) => navigator.canShare?.({ files: [f] })) || candidatos[0];
+    const detalleTec = `Tipo ${archivo.type}; canShare: ${navigator.canShare ? candidatos.map((f) => navigator.canShare({ files: [f] })).join('/') : 'no existe'}; ${(bytes.length / 1048576).toFixed(1)} MB`;
     const resumen = `${manifiesto.elementos.length} elementos · ${(bytes.length / 1048576).toFixed(1)} MB`;
     modal('Visita lista', (c) => {
       const msg = el('p', { id: 'msg-envio', class: 'vacio', style: 'margin:0' }, 'Lo más seguro: pulsa «Guardar el .zip en el móvil» y luego súbelo a OneDrive desde la app Archivos.');
@@ -217,11 +220,11 @@ async function enviar(v) {
       const sube = [];
       if (navigator.canShare?.({ files: [archivo] })) {
         acciones.push(el('button', { class: 'btn g', id: 'compartir', type: 'button', onclick: async () => {
-          try { await navigator.share({ files: [archivo], title: nombre }); msg.textContent = 'Enviado al menú de compartir. Comprueba en OneDrive que aparece el .zip.'; }
-          catch (e) { msg.textContent = e?.name === 'AbortError' ? 'Has cancelado el envío. Puedes volver a intentarlo.' : 'Tu móvil no ha podido compartir el archivo (' + (e?.message || e) + '). Usa «Guardar el .zip en el móvil» y súbelo desde la app Archivos.'; }
+          try { await navigator.share({ files: [archivo], title: nombre }); msg.textContent = 'El móvil ha aceptado compartir. Comprueba en OneDrive que aparece el .zip.'; }
+          catch (e) { msg.textContent = e?.name === 'AbortError' ? 'Has cancelado el envío. Puedes volver a intentarlo.' : `Tu móvil no ha podido compartir el archivo (${e?.name}: ${e?.message}). [${detalleTec}] Usa «Guardar el .zip en el móvil» y súbelo desde la app Archivos.`; }
         } }, 'Probar a compartir directamente'));
       } else {
-        msg.textContent = 'Este navegador no puede compartir archivos directamente. Usa «Guardar el .zip en el móvil» y súbelo a OneDrive desde la app Archivos.';
+        msg.textContent = `Este navegador no permite compartir este tipo de archivo directamente [${detalleTec}]. Usa «Guardar el .zip en el móvil» y súbelo a OneDrive desde la app Archivos.`;
       }
       const href = url(archivo);
       acciones.push(el('a', { class: 'btn p g', id: 'descargar', href, download: nombre, onclick: () => { msg.textContent = 'Guardado en Descargas como ' + nombre + '. Abre la app Archivos, entra en Descargas, deja pulsado el .zip y elige Compartir, OneDrive.'; } }, 'Guardar el .zip en el móvil'));
