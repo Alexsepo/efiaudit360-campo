@@ -2,7 +2,7 @@ import * as db from './db.js';
 import { abrirEditor } from './editor.js';
 import { construirPaquete } from './paquete.js';
 
-export const VERSION_APP = '2.3';
+export const VERSION_APP = '2.4';
 const app = document.getElementById('app');
 function aviso(texto) {
   document.getElementById('aviso')?.remove();
@@ -60,7 +60,10 @@ async function pantallaInicio() {
         el('label', { class: 'c' }, 'Hotel', hotel), el('label', { class: 'c' }, 'Fecha', fecha),
         el('button', { class: 'btn p g', id: 'crear', type: 'button', onclick: crear }, 'Empezar visita')),
       el('h2', {}, 'Visitas guardadas en este móvil'),
-      lista.length ? lista.map((v) => el('a', { class: 'caja', href: `#/v/${v.id}`, style: 'text-decoration:none;color:inherit' }, el('strong', {}, v.hotel), el('span', { class: 'vacio' }, `Visita ${v.fecha}`))) : el('p', { class: 'vacio' }, 'Todavía no hay ninguna.'))
+      lista.length ? lista.map((v) => el('a', { class: 'caja', href: `#/v/${v.id}`, style: 'text-decoration:none;color:inherit' }, el('strong', {}, v.hotel), el('span', { class: 'vacio' }, `Visita ${v.fecha}`))) : el('p', { class: 'vacio' }, 'Todavía no hay ninguna.'),
+      el('section', { class: 'caja' }, el('span', { class: 'vacio' }, `Versión ${VERSION_APP}`),
+        el('button', { class: 'btn g', id: 'actualizar', type: 'button', onclick: actualizarApp }, 'Buscar actualización de la app'),
+        el('span', { class: 'mini' }, 'No borra tus visitas: solo recarga el programa.')))
   );
 }
 
@@ -237,6 +240,19 @@ async function enviar(v) {
   }
 }
 
+async function actualizarApp() {
+  try {
+    const regs = await navigator.serviceWorker?.getRegistrations?.() ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    for (const k of await caches.keys()) await caches.delete(k);
+  } catch { /* se recarga igualmente */ }
+  location.reload();
+}
+
 addEventListener('hashchange', ruta);
 ruta();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  const habia = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (habia && !window.__recargado) { window.__recargado = true; location.reload(); } });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {});
+}
