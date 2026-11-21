@@ -2,7 +2,7 @@ import * as db from './db.js';
 import { abrirEditor } from './editor.js';
 import { construirPaquete } from './paquete.js';
 
-export const VERSION_APP = '2.1';
+export const VERSION_APP = '2.2';
 const app = document.getElementById('app');
 function aviso(texto) {
   document.getElementById('aviso')?.remove();
@@ -212,18 +212,20 @@ async function enviar(v) {
     const archivo = new File([bytes], nombre, { type: 'application/zip' });
     const resumen = `${manifiesto.elementos.length} elementos · ${(bytes.length / 1048576).toFixed(1)} MB`;
     modal('Visita lista', (c) => {
-      const msg = el('p', { id: 'msg-envio', class: 'vacio', style: 'margin:0' }, 'Este es el archivo que hay que subir: un solo .zip con toda la visita.');
+      const msg = el('p', { id: 'msg-envio', class: 'vacio', style: 'margin:0' }, 'Lo más seguro: pulsa «Guardar el .zip en el móvil» y luego súbelo a OneDrive desde la app Archivos.');
       const acciones = [];
+      const sube = [];
       if (navigator.canShare?.({ files: [archivo] })) {
-        acciones.push(el('button', { class: 'btn p g', id: 'compartir', type: 'button', onclick: async () => {
+        acciones.push(el('button', { class: 'btn g', id: 'compartir', type: 'button', onclick: async () => {
           try { await navigator.share({ files: [archivo], title: nombre }); msg.textContent = 'Enviado al menú de compartir. Comprueba en OneDrive que aparece el .zip.'; }
           catch (e) { msg.textContent = e?.name === 'AbortError' ? 'Has cancelado el envío. Puedes volver a intentarlo.' : 'Tu móvil no ha podido compartir el archivo (' + (e?.message || e) + '). Usa «Guardar el .zip en el móvil» y súbelo desde la app Archivos.'; }
-        } }, 'Compartir (elige OneDrive)'));
+        } }, 'Probar a compartir directamente'));
       } else {
         msg.textContent = 'Este navegador no puede compartir archivos directamente. Usa «Guardar el .zip en el móvil» y súbelo a OneDrive desde la app Archivos.';
       }
       const href = url(archivo);
-      acciones.push(el('a', { class: 'btn g' + (acciones.length ? '' : ' p'), id: 'descargar', href, download: nombre, onclick: () => { msg.textContent = 'Guardado en Descargas como ' + nombre + '. Abre la app Archivos, entra en Descargas, deja pulsado el .zip y elige Compartir, OneDrive.'; } }, 'Guardar el .zip en el móvil'));
+      acciones.push(el('a', { class: 'btn p g', id: 'descargar', href, download: nombre, onclick: () => { msg.textContent = 'Guardado en Descargas como ' + nombre + '. Abre la app Archivos, entra en Descargas, deja pulsado el .zip y elige Compartir, OneDrive.'; } }, 'Guardar el .zip en el móvil'));
+      acciones.reverse();
       return el('div', { style: 'display:flex;flex-direction:column;gap:10px' }, el('p', { style: 'margin:0;word-break:break-all' }, nombre), el('p', { class: 'vacio', style: 'margin:0' }, resumen), msg, acciones, el('button', { class: 'btn g', type: 'button', onclick: c }, 'Cerrar'));
     });
   } catch (e) {
