@@ -122,11 +122,12 @@ async function pantallaVisita(v) {
     el('div', { class: 'cap' },
       boton('foto', 'foto', () => iFoto.click()), boton('video', '', () => iVideo.click()),
       boton('audio', '', () => grabarAudio(nuevo)), boton('archivo', '', () => iArch.click()), boton('nota', '', () => escribirNota(nuevo))),
-    el('button', { class: 'btn p g', id: 'enviar', type: 'button', onclick: () => enviar(v) }, 'Enviar visita a OneDrive'),
-    el('span', { class: 'mini' }, 'Foto, vídeo, audio, archivo (PDF, Word…) o nota. Todo queda en la visita, sin conexión.'));
+    el('button', { class: 'btn p g', id: 'enviar', type: 'button', onclick: () => enviar(v) }, 'Enviar visita completa (.zip)'),
+    el('span', { class: 'mini' }, 'Las fotos y audios se guardan solos en la visita. Al terminar, pulsa «Enviar visita completa»: no compartas las fotos sueltas.'));
 
   app.replaceChildren(
     el('header', { class: 'cab' }, el('div', { class: 'fila' }, el('a', { href: '#/', style: 'color:#C7D7DC;text-decoration:none' }, '← Visitas'), estadoRed()),
+      el('button', { class: 'btn', id: 'enviar-arriba', type: 'button', style: 'background:#fff;margin-top:4px', onclick: () => enviar(v) }, 'Enviar visita completa (.zip)'),
       el('h1', {}, v.hotel), el('div', { style: 'font-size:13px;color:#C7D7DC' }, `Visita ${v.fecha} · ${cuenta('foto')} fotos · ${cuenta('audio')} audios · ${cuenta('video')} vídeos · ${cuenta('archivo')} archivos · ${cuenta('nota')} notas`)),
     el('main', {}, pend, dest, lista), iFoto, iVideo, iArch, barra);
 }
@@ -207,7 +208,7 @@ async function enviar(v) {
     const href = url(archivo);
     acciones.push(el('a', { class: 'btn g' + (acciones.length ? '' : ' p'), id: 'descargar', href, download: nombre }, 'Guardar el archivo en el móvil'));
     return el('div', { style: 'display:flex;flex-direction:column;gap:10px' }, el('p', { style: 'margin:0' }, `${nombre}`), el('p', { class: 'vacio', style: 'margin:0' }, resumen),
-      el('p', { class: 'vacio', style: 'margin:0' }, 'Elige OneDrive en el menú de compartir, o guarda el archivo y súbelo a la carpeta de OneDrive. La app de Windows lo recogerá de allí.'),
+      el('p', { class: 'vacio', style: 'margin:0' }, 'Este es el archivo que hay que subir: un solo .zip con toda la visita. En el menú de compartir elige OneDrive, o guárdalo y súbelo a OneDrive.'),
       acciones, el('button', { class: 'btn g', type: 'button', onclick: c }, 'Cerrar'));
   });
 }
